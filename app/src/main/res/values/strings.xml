@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">POCMaps</string>
+    <string name="accessibility_service_description">AccessibilityDescription</string>
+</resources>
