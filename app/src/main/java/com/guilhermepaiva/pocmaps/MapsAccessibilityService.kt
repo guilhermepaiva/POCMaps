@@ -13,20 +13,6 @@ class MapsAccessibilityService : AccessibilityService() {
         private const val TAG = "MapsAccessibilityService"
     }
 
-//    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-//        event?.let {
-//            Log.d(TAG, "onAccessibilityEvent: $event")
-//
-//            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-//                val rootNode = rootInActiveWindow
-//                rootNode?.let {
-////                    performSearch(it)
-//                    performGoTabClick(it)
-//                }
-//            }
-//        }
-//    }
-
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event?.let {
             Log.d(TAG, "onAccessibilityEvent: $event")
@@ -42,13 +28,8 @@ class MapsAccessibilityService : AccessibilityService() {
     }
 
     private fun performContinueButtonClick(rootNode: AccessibilityNodeInfo) {
-//        val continueButton = findNodeByText(rootNode, "Continue")
         val continueButton = findNodeByText(rootNode, "Continue")
-        continueButton?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-//        continueButton?.apply {
-//            performAction(AccessibilityNodeInfo.ACTION_SELECT)
-//            performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION)
-//        }
+        continueButton?.parent?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
     private fun performGoTabClick(rootNode: AccessibilityNodeInfo) {
@@ -87,9 +68,11 @@ class MapsAccessibilityService : AccessibilityService() {
 
         for (i in 0 until rootNode.childCount) {
             val childNode = rootNode.getChild(i)
-            val result = findNodeByText(childNode, text)
-            if (result != null) {
-                return result
+            if (childNode != null) {
+                val result = findNodeByText(childNode, text)
+                if (result != null) {
+                    return result
+                }
             }
         }
 
