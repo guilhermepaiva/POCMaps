@@ -59,59 +59,29 @@ class MainActivity : ComponentActivity() {
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.padding(16.dp)
                             ) {
-                                Text(text = "Origin")
-                                Column {
-                                    OutlinedTextField(
-                                        value = originLat,
-                                        onValueChange = { originLat = it },
-                                        label = { Text("Origin Latitude") },
-                                        modifier = Modifier.padding(4.dp)
-                                    )
-                                    OutlinedTextField(
-                                        value = originLng,
-                                        onValueChange = { originLng = it },
-                                        label = { Text("Origin Longitude") },
-                                        modifier = Modifier.padding(4.dp)
-                                    )
-                                }
+                                LocationInput(
+                                    title = "Origin",
+                                    latitude = originLat,
+                                    onLatitudeChange = { originLat = it },
+                                    longitude = originLng,
+                                    onLongitudeChange = { originLng = it }
+                                )
 
-                                Spacer(modifier = Modifier.height(16.dp))
+                                LocationInput(
+                                    title = "Waypoint",
+                                    latitude = waypointLat,
+                                    onLatitudeChange = { waypointLat = it },
+                                    longitude = waypointLng,
+                                    onLongitudeChange = { waypointLng = it }
+                                )
 
-                                Text(text = "Waypoint")
-                                Column {
-                                    OutlinedTextField(
-                                        value = waypointLat,
-                                        onValueChange = { waypointLat = it },
-                                        label = { Text("Waypoint Latitude") },
-                                        modifier = Modifier.padding(4.dp)
-                                    )
-                                    OutlinedTextField(
-                                        value = waypointLng,
-                                        onValueChange = { waypointLng = it },
-                                        label = { Text("Waypoint Longitude") },
-                                        modifier = Modifier.padding(4.dp)
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Text(text = "Destination")
-                                Column {
-                                    OutlinedTextField(
-                                        value = destinationLat,
-                                        onValueChange = { destinationLat = it },
-                                        label = { Text("Destination Latitude") },
-                                        modifier = Modifier.padding(4.dp)
-                                    )
-                                    OutlinedTextField(
-                                        value = destinationLng,
-                                        onValueChange = { destinationLng = it },
-                                        label = { Text("Destination Longitude") },
-                                        modifier = Modifier.padding(4.dp)
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(16.dp))
+                                LocationInput(
+                                    title = "Destination",
+                                    latitude = destinationLat,
+                                    onLatitudeChange = { destinationLat = it },
+                                    longitude = destinationLng,
+                                    onLongitudeChange = { destinationLng = it }
+                                )
 
                                 Button(onClick = {
                                     openGoogleMaps(
