@@ -19,6 +19,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,15 +55,19 @@ class MainActivity : ComponentActivity() {
 
                             var originLat by remember { mutableStateOf("") }
                             var originLng by remember { mutableStateOf("") }
-                            var waypointLat by remember { mutableStateOf("") }
-                            var waypointLng by remember { mutableStateOf("") }
                             var destinationLat by remember { mutableStateOf("") }
                             var destinationLng by remember { mutableStateOf("") }
+
+                            var waypoints by remember { mutableStateOf(listOf<Pair<String, String>>()) }
+
+                            val scrollState = rememberScrollState()
 
                             Column(
                                 verticalArrangement = Arrangement.Center,
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(16.dp)
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .verticalScroll(scrollState)
                             ) {
                                 LocationInput(
                                     title = "Origin",
@@ -67,13 +77,34 @@ class MainActivity : ComponentActivity() {
                                     onLongitudeChange = { originLng = it }
                                 )
 
-                                LocationInput(
-                                    title = "Waypoint",
-                                    latitude = waypointLat,
-                                    onLatitudeChange = { waypointLat = it },
-                                    longitude = waypointLng,
-                                    onLongitudeChange = { waypointLng = it }
-                                )
+                                Text(text = "Waypoints")
+                                waypoints.forEachIndexed { index, waypoint ->
+                                    LocationInput(
+                                        title = "Waypoint ${index + 1}",
+                                        latitude = waypoint.first,
+                                        onLatitudeChange = { newLat ->
+                                            waypoints = waypoints.toMutableList().apply {
+                                                this[index] = newLat to waypoints[index].second
+                                            }
+                                        },
+                                        longitude = waypoint.second,
+                                        onLongitudeChange = { newLng ->
+                                            waypoints = waypoints.toMutableList().apply {
+                                                this[index] = waypoints[index].first to newLng
+                                            }
+                                        }
+                                    )
+                                }
+
+                                Button(onClick = {
+                                    waypoints = waypoints + ("" to "")
+                                }) {
+                                    Icon(imageVector = Icons.Default.Add, contentDescription = "Add Waypoint")
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(text = "Add Waypoint")
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
 
                                 LocationInput(
                                     title = "Destination",
@@ -87,15 +118,14 @@ class MainActivity : ComponentActivity() {
                                     openGoogleMaps(
                                         originLat.ifEmpty { "-8.05605673523189" },
                                         originLng.ifEmpty { "-34.87147976615561" },
-                                        waypointLat.ifEmpty { "-8.055744411106742" },
-                                        waypointLng.ifEmpty { "-34.87183456642819" },
+                                        waypoints.map { it.first.ifEmpty { "-8.055744411106742" } to it.second.ifEmpty { "-34.87183456642819" } },
                                         destinationLat.ifEmpty { "-8.058123948450481" },
                                         destinationLng.ifEmpty { "-34.872231533348504" }
-
                                     )
                                 }) {
                                     Text(text = "Open Google Maps")
                                 }
+
 
                                 Button(
                                     onClick = {
@@ -117,11 +147,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun openGoogleMaps(originLat: String = "-8.05605673523189", originLng: String = "-34.87147976615561", waypointLat: String = "-8.055744411106742", waypointLng: String = "-34.87183456642819", destinationLat: String = "-8.058123948450481", destinationLng: String = "-34.872231533348504") {
+    private fun openGoogleMaps(
+        originLat: String = "-8.05605673523189",
+        originLng: String = "-34.87147976615561",
+        waypoints: List<Pair<String, String>>,
+        destinationLat: String = "-8.058123948450481",
+        destinationLng: String = "-34.872231533348504"
+    ) {
         val origin = "$originLat,$originLng"
-        val waypoint = "$waypointLat,$waypointLng"
+        val waypointStr = waypoints.joinToString("|") { "${it.first},${it.second}" }
         val destination = "$destinationLat,$destinationLng"
-        val uri = "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&waypoints=$waypoint"
+        val uri = "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&waypoints=$waypointStr"
 
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
             setPackage("com.google.android.apps.maps")
