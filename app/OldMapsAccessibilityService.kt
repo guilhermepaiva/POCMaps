@@ -5,7 +5,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
-class MapsAccessibilityService: AccessibilityService() {
+class OldMapsAccessibilityService: AccessibilityService() {
     companion object {
         private const val TAG = "MapsAccessibilityService"
     }
