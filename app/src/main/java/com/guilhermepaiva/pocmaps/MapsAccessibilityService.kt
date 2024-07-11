@@ -2,6 +2,8 @@ package com.guilhermepaiva.pocmaps
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.os.Handler
+import android.os.Looper
 import android.text.SpannableString
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
@@ -11,7 +13,10 @@ class MapsAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "MapsAccessibilityService"
+        private const val DELAY_MS = 3000L // 3 seconds delay
     }
+
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event?.let {
@@ -21,10 +26,18 @@ class MapsAccessibilityService : AccessibilityService() {
                 event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
                 val rootNode = rootInActiveWindow
                 rootNode?.let {
-                    performContinueButtonClick(it)
+                    handler.postDelayed({
+                        performStartButtonClick(it)
+                        performContinueButtonClick(it)
+                    }, DELAY_MS)
                 }
             }
         }
+    }
+
+    private fun performStartButtonClick(rootNode: AccessibilityNodeInfo) {
+        val startButton = findNodeByText(rootNode, "Start")
+        startButton?.parent?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
     private fun performContinueButtonClick(rootNode: AccessibilityNodeInfo) {
