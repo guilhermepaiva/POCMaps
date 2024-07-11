@@ -2,6 +2,10 @@ package com.guilhermepaiva.pocmaps
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.Context
+import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.text.SpannableString
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
@@ -13,6 +17,16 @@ class MapsAccessibilityService : AccessibilityService() {
         private const val TAG = "MapsAccessibilityService"
     }
 
+    private var delayMs: Long = 3000L // Default delay
+
+    private val handler = Handler(Looper.getMainLooper())
+
+    override fun onCreate() {
+        super.onCreate()
+        delayMs = getSharedPreferences("com.guilhermepaiva.pocmaps", Context.MODE_PRIVATE)
+            .getLong("delay_ms", 3000L)
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event?.let {
             Log.d(TAG, "onAccessibilityEvent: $event")
@@ -21,15 +35,38 @@ class MapsAccessibilityService : AccessibilityService() {
                 event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
                 val rootNode = rootInActiveWindow
                 rootNode?.let {
-                    performContinueButtonClick(it)
+                    handler.postDelayed({
+                        performStartButtonClick(it)
+                        performContinueButtonClick(it)
+                        performDoneButtonClick(it)
+                    }, delayMs)
                 }
             }
         }
     }
 
+    private fun performStartButtonClick(rootNode: AccessibilityNodeInfo) {
+        val startButton = findNodeByText(rootNode, "Start")
+        startButton?.parent?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
     private fun performContinueButtonClick(rootNode: AccessibilityNodeInfo) {
         val continueButton = findNodeByText(rootNode, "Continue")
         continueButton?.parent?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
+    private fun performDoneButtonClick(rootNode: AccessibilityNodeInfo) {
+        val doneButton = findNodeByText(rootNode, "Done")
+        doneButton?.parent?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        if (doneButton != null) {
+            launchPOCMapsApp()
+        }
+    }
+
+    private fun launchPOCMapsApp() {
+        val launchIntent = packageManager.getLaunchIntentForPackage("com.guilhermepaiva.pocmaps")
+        launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(launchIntent)
     }
 
     private fun performGoTabClick(rootNode: AccessibilityNodeInfo) {
