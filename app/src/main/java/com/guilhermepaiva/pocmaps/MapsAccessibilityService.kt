@@ -2,6 +2,8 @@ package com.guilhermepaiva.pocmaps
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.Context
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.text.SpannableString
@@ -13,10 +15,17 @@ class MapsAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "MapsAccessibilityService"
-        private const val DELAY_MS = 3000L // 3 seconds delay
     }
 
+    private var delayMs: Long = 3000L // Default delay
+
     private val handler = Handler(Looper.getMainLooper())
+
+    override fun onCreate() {
+        super.onCreate()
+        delayMs = getSharedPreferences("com.guilhermepaiva.pocmaps", Context.MODE_PRIVATE)
+            .getLong("delay_ms", 3000L)
+    }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event?.let {
@@ -29,7 +38,8 @@ class MapsAccessibilityService : AccessibilityService() {
                     handler.postDelayed({
                         performStartButtonClick(it)
                         performContinueButtonClick(it)
-                    }, DELAY_MS)
+                        performDoneButtonClick(it)
+                    }, delayMs)
                 }
             }
         }
@@ -43,6 +53,20 @@ class MapsAccessibilityService : AccessibilityService() {
     private fun performContinueButtonClick(rootNode: AccessibilityNodeInfo) {
         val continueButton = findNodeByText(rootNode, "Continue")
         continueButton?.parent?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
+    private fun performDoneButtonClick(rootNode: AccessibilityNodeInfo) {
+        val doneButton = findNodeByText(rootNode, "Done")
+        doneButton?.parent?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        if (doneButton != null) {
+            launchPOCMapsApp()
+        }
+    }
+
+    private fun launchPOCMapsApp() {
+        val launchIntent = packageManager.getLaunchIntentForPackage("com.guilhermepaiva.pocmaps")
+        launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(launchIntent)
     }
 
     private fun performGoTabClick(rootNode: AccessibilityNodeInfo) {
