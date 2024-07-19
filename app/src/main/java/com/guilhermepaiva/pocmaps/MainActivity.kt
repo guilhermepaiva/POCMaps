@@ -1,9 +1,14 @@
 package com.guilhermepaiva.pocmaps
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,12 +20,12 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -28,23 +33,34 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import com.guilhermepaiva.pocmaps.ui.theme.POCMapsTheme
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.launch
+
 
 class MainActivity : ComponentActivity() {
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
         setContent {
             POCMapsTheme {
                 Surface (
@@ -60,6 +76,7 @@ class MainActivity : ComponentActivity() {
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
 
+                            val context = LocalContext.current
                             var originLat by remember { mutableStateOf("") }
                             var originLng by remember { mutableStateOf("") }
                             var destinationLat by remember { mutableStateOf("") }
@@ -72,6 +89,38 @@ class MainActivity : ComponentActivity() {
 
                             val scrollState = rememberScrollState()
                             val travelModes = listOf("driving", "walking")
+
+                            var locationPermissionGranted by remember { mutableStateOf(false) }
+
+                            val requestLocationPermissionLauncher = rememberLauncherForActivityResult(
+                                contract = ActivityResultContracts.RequestMultiplePermissions(),
+                                onResult = { permissions ->
+                                    locationPermissionGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+                                    if (locationPermissionGranted) {
+                                        getCurrentLocation { location ->
+                                            originLat = location.latitude.toString()
+                                            originLng = location.longitude.toString()
+                                        }
+                                    } else {
+                                        Toast.makeText(context, "Location permission is required to fetch current location", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            )
+
+                            LaunchedEffect(Unit) {
+                                if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+                                    ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                                    locationPermissionGranted = true
+                                    getCurrentLocation { location ->
+                                        originLat = location.latitude.toString()
+                                        originLng = location.longitude.toString()
+                                    }
+                                } else {
+                                    requestLocationPermissionLauncher.launch(
+                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+                                    )
+                                }
+                            }
 
 
                             Column(
@@ -182,7 +231,8 @@ class MainActivity : ComponentActivity() {
                                     latitude = originLat,
                                     onLatitudeChange = { originLat = it },
                                     longitude = originLng,
-                                    onLongitudeChange = { originLng = it }
+                                    onLongitudeChange = { originLng = it },
+                                    editable = false
                                 )
 
                                 HorizontalDivider()
@@ -299,6 +349,35 @@ class MainActivity : ComponentActivity() {
             putLong("delay_ms", delay)
             apply()
         }
+    }
+
+    private fun getCurrentLocation(onLocationReceived: (Location) -> Unit) {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
+            return
+        }
+        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+            location?.let {
+                onLocationReceived(it)
+            } ?: run {
+                Toast.makeText(this, "Unable to get current location", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    companion object {
+        private const val LOCATION_PERMISSION_REQUEST_CODE = 1
     }
 }
 

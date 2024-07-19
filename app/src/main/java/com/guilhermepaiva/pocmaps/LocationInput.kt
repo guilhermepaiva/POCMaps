@@ -18,7 +18,8 @@ fun LocationInput(
     latitude: String,
     onLatitudeChange: (String) -> Unit,
     longitude: String,
-    onLongitudeChange: (String) -> Unit
+    onLongitudeChange: (String) -> Unit,
+    editable: Boolean = true
 ) {
     Text(
         text = title,
@@ -32,14 +33,16 @@ fun LocationInput(
             value = latitude,
             onValueChange = onLatitudeChange,
             label = { Text("$title Latitude") },
-            modifier = Modifier.padding(4.dp)
+            modifier = Modifier.padding(4.dp),
+            readOnly = !editable
         )
 
         OutlinedTextField(
             value = longitude,
             onValueChange = onLongitudeChange,
             label = { Text("$title Longitude") },
-            modifier = Modifier.padding(4.dp)
+            modifier = Modifier.padding(4.dp),
+            readOnly = !editable
         )
     }
 
